@@ -3,6 +3,7 @@ package com.demo.user.service;
 import com.demo.user.model.User;
 import com.demo.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,8 +14,13 @@ public class UserServiceImpl implements UserService  {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
     @Override
     public String createUser(User user) {
+        String latestpassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(latestpassword);
         userRepository.save(user);
         return "done";
     }
