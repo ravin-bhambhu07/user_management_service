@@ -1,5 +1,6 @@
 package com.demo.user.service;
 
+import com.demo.user.config.JwtUtil;
 import com.demo.user.model.User;
 import com.demo.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -18,13 +20,31 @@ public class CustomUserAuthService implements UserDetailsService {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    JwtUtil jwtUtil;
+
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user=userRepository.findByUsername(username);
-        if(user == null){
-            throw new NoSuchElementException("user not found!!");
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            throw new NoSuchElementException("User not found!");
         }
 
-        return new org.springframework.security.core.userdetails.User(user.getUsername(),user.getPassword(), Collections.singletonList(new SimpleGrantedAuthority(user.getRole())));
+        return new org.springframework.security.core.userdetails.User(
+                user.getUsername(),
+                user.getPassword(),
+                Collections.singletonList(new SimpleGrantedAuthority(user.getRole()))
+        );
+    }
+
+    public String loginUser(String username, String password) {
+        UserDetails userDetails = loadUserByUsername(username);
+        if (userDetails != null && passwordEncoder.matches(password, userDetails.getPassword())) {
+            return jwtUtil.generateToken(username);
+        }
+        throw new RuntimeException("Invalid credentials");
     }
 }
